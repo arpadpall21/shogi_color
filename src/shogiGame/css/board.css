@@ -2,14 +2,13 @@
     display: inline-block;
 }
 .shogiBoard {
-    border: 5px double black;
+    border: 7px solid black;
     background-color: #d69f74;
     border-collapse: collapse;
     vertical-align: middle;
     table-layout: fixed;
 }
 .shogiBoard td {
-    border: solid 1px;
+    border: solid 2px black;
     width: auto;
-    /* height: 100%; */
 }
