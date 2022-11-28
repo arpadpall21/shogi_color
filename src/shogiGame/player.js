@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
 import './css/player.css'
+import { store } from '../store'
+
 
 export function Player(props) {
-    const [playerActive, updatePlayerActive] = useState(props.active)
+    const [activePlayer, updateActivePlayer] = useState(store.getState().currentActivePlayer)
     const playerNr = props.playerNr
     const playerColor = playerNr === 1 ? 'green' : 'red'
-    
     let backgroundColor = 'white';
     
-    if (playerActive) {
+    if (activePlayer === playerNr) {
         backgroundColor = playerColor;
     }
+    
+    store.subscribe( () => {
+        updateActivePlayer(store.getState().currentActivePlayer)
+    })
     
     return (
         <div className="player"> <span style={{backgroundColor, borderColor:playerColor}}

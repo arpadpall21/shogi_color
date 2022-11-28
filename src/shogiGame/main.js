@@ -6,9 +6,9 @@ import { Player } from './player'
 export function ShogiGame(prop) {
     return (
         <div className="gameContainer">
-            <Player playerNr={1} active={true}/>
+            <Player playerNr={1}/>
             <Board />
-            <Player playerNr={2} active={false}/>
+            <Player playerNr={2}/>
         </div>
     )
 }
