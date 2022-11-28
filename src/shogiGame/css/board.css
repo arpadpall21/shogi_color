@@ -1,0 +1,15 @@
+.boardContainer {
+    display: inline-block;
+}
+.shogiBoard {
+    border: 5px double black;
+    background-color: #d69f74;
+    border-collapse: collapse;
+    vertical-align: middle;
+    table-layout: fixed;
+}
+.shogiBoard td {
+    border: solid 1px;
+    width: auto;
+    /* height: 100%; */
+}

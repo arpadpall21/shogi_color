@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './player.css'
+import './css/player.css'
 
 export function Player(prop) {
     const [playerActive, updateActiveState] = useState(prop)
