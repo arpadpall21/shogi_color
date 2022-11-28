@@ -1,0 +1,10 @@
+.player {
+    text-align: center;
+    margin: 7px;
+}
+.player > span {
+    font-size: 2em;
+    border: solid;
+    border-radius: 15px;
+    padding: 3px 20px;
+}
