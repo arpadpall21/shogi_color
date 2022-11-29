@@ -9,9 +9,7 @@ export function Board() {
     const [boardState, updateBoardState] = useState({board:defaultBoardState, phase:'active'});
     const currentActivePlayer = store.getState().currentActivePlayer
     const tableSize = Number.parseInt((window.innerHeight < window.innerWidth ? window.innerHeight : window.innerWidth) / 100 * 75);
-    
-    
-    
+
     function pieceMove(ev) {
         ev.preventDefault();
         const cellKey = ev.currentTarget.getAttribute('cellkey')

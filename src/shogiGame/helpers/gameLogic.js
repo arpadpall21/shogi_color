@@ -1,14 +1,12 @@
 /*
     歩 = pawn
     銀 = silver general
-    
-    
-    香 = lance
+    金 = gold general
+    桂 = kinght
     王 = king
+    香 = lance
     飛 = rock
     角 = bishop
-    桂 = kinght
-    金 = gold general
 */
 
 
@@ -35,7 +33,7 @@ export function calcStep(cellkey, currentActivePlayer, board){
             return  { newBoard:board, stepSuccess:false }   // original board retunred -> component won't be rerendered
         }
 
-        const possibleMoves =  calcPossibleMoves(newBoard.board[v][h]);
+        const possibleMoves =  calcPossibleMoves(v, h, newBoard.board);
 
         for(let i of possibleMoves){
             const cellToStep = newBoard.board[v+i[0]] && newBoard.board[v+i[0]][h+i[1]]
@@ -58,7 +56,7 @@ export function calcStep(cellkey, currentActivePlayer, board){
 
         return { newBoard, stepSuccess:false }
     }
-    
+
     if (board.phase === 'moving') {   // moving phase logic
         if (!['step', 'kill'].includes(newBoard.board[v][h].state)) {
             return { newBoard:resetBoardToActive(newBoard), stepSuccess:false }     // reset board to active phase if not stepped on possible move cell
@@ -70,61 +68,132 @@ export function calcStep(cellkey, currentActivePlayer, board){
         newBoard.board[v][h] = val;
         return{ newBoard:resetBoardToActive(newBoard), stepSuccess:true }
     }
-
 }
 
-function calcPossibleMoves(cell){
-    switch (cell.piece) {
-        case '歩':
-            return pawnMoves(cell.p)
-        case '銀':
-            return silverGeneralMoves(cell.p)
-        default:
-            return null
-    }
+function calcPossibleMoves(v, h, board){
+    const player = board[v][h].p
 
+    switch (board[v][h].piece) {
+        case '歩':
+            return pawnMoves(player);
+        case '銀':
+            return silverGeneralMoves(player);
+        case '金':
+            return goldGeneralMoves(player);
+        case '桂':
+            return knightMoves(player);
+        case '香':
+            return lanceMoves(player, board, h, v);
+        case '飛':
+            return rockMoves(player, board, h, v);
+        case '角':
+            return bishopMoves(player, board, h, v);
+        case '王':
+            return kingMoves();
+    }
 }
 
 function pawnMoves(player) {
-    const moves = [[-1, 0]]
+    const moves = [[-1, 0]];
     if (player === 1) {
-        return moves
+        return moves;
     }
-    return inverseMoves(moves)
+
+    return inverseMoves(moves);
 }
 
-function silverGeneralMoves(player){
-    const moves = [[-1, -1], [-1, 0], [-1, 1], [1, -1], [1, 1]]
+function silverGeneralMoves(player) {
+    const moves = [[-1, -1], [-1, 0], [-1, 1], [1, -1], [1, 1]];
     if (player === 1) {
-        return moves
+        return moves;
     }
-    return inverseMoves(moves)
+
+    return inverseMoves(moves);
+}
+
+function goldGeneralMoves(player) {
+    const moves = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0]];
+    if (player === 1) {
+        return moves;
+    }
+
+    return inverseMoves(moves);
+}
+
+function knightMoves(player) {
+    const moves = [[-2, -1], [-2, 1]];
+    if (player === 1) {
+        return moves;
+    }
+
+    return inverseMoves(moves);
+}
+
+function lanceMoves(player, board, h, v) {
+    const moves = [
+        [[-1, 0], [-2, 0], [-3, 0], [-4, 0], [-5, 0], [-6, 0], [-7, 0], [-8, -8]]
+    ];
+
+    if (player === 1) {
+        return calcPossibleContinousMoves(v, h, moves, board);
+    }
+
+    return calcPossibleContinousMoves(v, h, [inverseMoves(moves[0])], board);
+}
+
+function rockMoves(player, board, h, v) {
+    const moves = [
+        [[-1, 0], [-2, 0], [-3, 0], [-4, 0], [-5, 0], [-6, 0], [-7, 0], [-8, 0]],
+        [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0], [8, 0]],
+        [[0, -1], [0, -2], [0, -3], [0, -4], [0, -5], [0, -6], [0, -7], [0, -8]],
+        [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7], [0, 8]]
+        
+    ];
+
+    return calcPossibleContinousMoves(v, h, moves, board);
+}
+
+function bishopMoves(player, board, h, v) {
+    const moves = [
+        [[-1, -1], [-2, -2], [-3, -3], [-4, -4], [-5, -5], [-6, -6], [-7, -7], [-8, -8]],
+        [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7], [8, 8]],
+        [[-1, 1], [-2, 2], [-3, 3], [-4, 4], [-5, 5], [-6, 6], [-7, 7], [-8, 8]],
+        [[1, -1], [2, -2], [3, -3], [4, -4], [5, -5], [6, -6], [7, -7], [8, -8]]
+    ];
+
+    return calcPossibleContinousMoves(v, h, moves, board);
+}
+
+function kingMoves(){
+    return [[-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1]];
 }
 
 
-// function bishopMoves(){
-//     return [
-//         [-1, -1], [-2, -2], [-3, -3], [-4, -4], [-5, -5], [-6, -6], [-7, -7], [-8, -8],
-//         [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7], [8, 8],
-    
-    
-//     ]
-// }
-
-function inverseMoves(moves){   // inverses possible moves for player 2
+function inverseMoves(moves) {   // inverses possible moves for player 2
     for (const element of moves) {
         for (let i = 0; i < 2; i++) {
-            if (element[i] === 1) {
-                element[i] = -1
-                continue
+            if (element[i] === 0) {
+                continue;
             }
-            if (element[i] === -1) {
-                element[i] = 1
-            }
+            element[i] = -element[i];
         }
     }
 
     return moves
+}
+
+function calcPossibleContinousMoves(v, h, moves, board) {
+    const possibleContinousMoves = []
+    for (let i of moves) {
+        for(let k of i) {
+            possibleContinousMoves.push([k[0], k[1]])
+            if (board[v+k[0]][h+k[1]] !== null && board[v+k[0]][h+k[1]] !== undefined && board[v+k[0]][h+k[1]].state === null) {
+                break;
+            }
+        }
+    }
+
+    return  possibleContinousMoves
 }
 
 function resetBoardToActive(board) {
@@ -157,5 +226,4 @@ function getSelectedCell(board) {
             }
         }
     }
-    
 }
