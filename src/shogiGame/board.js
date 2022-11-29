@@ -1,59 +1,70 @@
-import React, { useState } from 'react'
-import './css/board.css'
-import { store, incrementMoves } from '../store'
+import React, { useState } from 'react';
+import './css/board.css';
+import { store, incrementMoves } from '../store';
+import { defaultBoardState, calcStep } from './helpers/gameLogic'
 
-
-
-/*
-王 = king
-飛 = rock
-角 = bishop
-桂 = kinght
-香 = lance
-金 = gold general
-銀 = silver general
-歩 = pawn
-*/
 
 export function Board() {
-    const defaultBoardState = [
-        [{p:2, piece:'香'}, {p:2, piece:'桂'}, {p:2, piece:'銀'}, {p:2, piece:'金'}, {p:2, piece:'王'}, {p:2, piece:'金'}, {p:2, piece:'銀'}, {p:2, piece:'桂'}, {p:2, piece:'香'}],
-        [null, {p:2, piece:'飛'}, null, null, null, null, null, {p:2, piece:'角'}, null],
-        [{p:2, piece:'歩'}, {p:2, piece:'歩'}, {p:2, piece:'歩'}, {p:2, piece:'歩'}, {p:2, piece:'歩'}, {p:2, piece:'歩'}, {p:2, piece:'歩'}, {p:2, piece:'歩'}, {p:2, piece:'歩'}],
-        [null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null],
-        [{p:1, piece:'歩'}, {p:1, piece:'歩'}, {p:1, piece:'歩'}, {p:1, piece:'歩'}, {p:1, piece:'歩'}, {p:1, piece:'歩'}, {p:1, piece:'歩'}, {p:1, piece:'歩'}, {p:1, piece:'歩'}],
-        [null, {p:1, piece:'角'}, null, null, null, null, null, {p:1, piece:'飛'}, null],
-        [{p:1, piece:'香'}, {p:1, piece:'桂'}, {p:1, piece:'銀'}, {p:1, piece:'金'}, {p:1, piece:'王'}, {p:1, piece:'金'}, {p:1, piece:'銀'}, {p:1, piece:'桂'}, {p:1, piece:'香'}]
-    ]
-
-    const [boardState, updateBoardState] = useState(defaultBoardState)
-    const tableSize = Number.parseInt((window.innerHeight < window.innerWidth ? window.innerHeight : window.innerWidth) / 100 * 75)
+    console.log( '************************rerendered ')
+    const [boardState, updateBoardState] = useState({board:defaultBoardState, phase:'active'});
+    const currentActivePlayer = store.getState().currentActivePlayer
+    const tableSize = Number.parseInt((window.innerHeight < window.innerWidth ? window.innerHeight : window.innerWidth) / 100 * 75);
     
     
-    function move(ev) {
+    
+    function pieceMove(ev) {
         ev.preventDefault();
         
-        store.dispatch(incrementMoves())
-        // updateBoardState()
+        const cellKey = ev.currentTarget.getAttribute('cellkey')
+        
+        
+        const newTable = calcStep(cellKey, boardState)
+        
+        
+        
+        // store.dispatch(incrementMoves());
+        updateBoardState(newTable)
     }
-    
-    
-    let cellId = 0;
+
+    let rowIdx = -1;
     return (
         <div className="boardContainer">
-            <table className='shogiBoard' style={{width:tableSize, height:tableSize}} onClick={move}>
+            <table className='shogiBoard' style={{width:tableSize, height:tableSize}}>
                 <tbody>
-                {boardState.map( r => {
-                    cellId += 10
-                    return <tr key={cellId}>
+                {boardState.board.map( r => {
+                    rowIdx++;
+                    let cellIdx = -1;
+
+                    return <tr key={rowIdx}>
                         {r.map( d => {
-                            cellId++
+                            cellIdx++;
+                            const cellId = `${rowIdx}-${cellIdx}`
+
                             if (d) {
-                                const playerColor = d.p === 1 ? 'green' : 'red'
-                                return <td key={cellId} style={{backgroundColor:playerColor}}> {d.piece}  </td>
+                                let backgroundColor = undefined
+
+                                if (d.state) {
+                                    backgroundColor = d.state === 'selected' ? 'orange' : 'yellow';
+                                } else {
+                                    backgroundColor = d.p === 1 ? 'green' : 'red';
+                                }
+
+                                if (d.p === currentActivePlayer || d.state) {     // listener registered only on active player cells
+                                    return <td
+                                        key={cellId}
+                                        cellkey={cellId}
+                                        style={{backgroundColor}}
+                                        onClick={pieceMove}>
+                                    {d.piece} </td>
+                                }
+
+                                return <td 
+                                    key={cellId}
+                                    cellkey={cellId}
+                                    style={{backgroundColor}}>
+                                {d.piece} </td>
                             }
+
                             return <td key={cellId} style={{visibility:'hidden'}}> 歩 </td>
                         })}
                     </tr>

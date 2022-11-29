@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import './css/player.css'
-import { store } from '../store'
+import './css/player.css';
+import { store } from '../store';
 
 
 export function Player(props) {
-    const [activePlayer, updateActivePlayer] = useState(store.getState().currentActivePlayer)
-    const playerNr = props.playerNr
-    const playerColor = playerNr === 1 ? 'green' : 'red'
+    const [activePlayer, updateActivePlayer] = useState(store.getState().currentActivePlayer);
+    const playerNr = props.playerNr;
+    const playerColor = playerNr === 1 ? 'green' : 'red';
     let backgroundColor = 'white';
     
     if (activePlayer === playerNr) {
@@ -14,7 +14,7 @@ export function Player(props) {
     }
     
     store.subscribe( () => {
-        updateActivePlayer(store.getState().currentActivePlayer)
+        updateActivePlayer(store.getState().currentActivePlayer);
     })
     
     return (
