@@ -15,14 +15,13 @@ export function Board() {
     function pieceMove(ev) {
         ev.preventDefault();
         const cellKey = ev.currentTarget.getAttribute('cellkey')
-        
-        
-        const newTable = calcStep(cellKey, currentActivePlayer, boardState)
-        
-        
-        
-        // store.dispatch(incrementMoves());
-        updateBoardState(newTable)
+        const { newBoard, stepSuccess } = calcStep(cellKey, currentActivePlayer, boardState)
+
+        if (stepSuccess) {
+            store.dispatch(incrementMoves());
+        }
+
+        updateBoardState(newBoard)
     }
 
     console.log( boardState )

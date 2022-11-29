@@ -32,7 +32,7 @@ export function calcStep(cellkey, currentActivePlayer, board){
 
     if (board.phase === 'active') {   // active phase logic
         if (board.board[v][h].p !== currentActivePlayer) {
-            return board
+            return  { newBoard:board, stepSuccess:false }   // original board retunred -> component won't be rerendered
         }
 
         const possibleMoves =  calcPossibleMoves(newBoard.board[v][h]);
@@ -56,21 +56,19 @@ export function calcStep(cellkey, currentActivePlayer, board){
         newBoard.board[v][h].state = 'selected';
         newBoard.phase = 'moving';
 
-        return newBoard
+        return { newBoard, stepSuccess:false }
     }
     
     if (board.phase === 'moving') {   // moving phase logic
         if (!['step', 'kill'].includes(newBoard.board[v][h].state)) {
-            return resetBoardToActive(newBoard)     // reset board to active phase if not stepped on possible move cell
+            return { newBoard:resetBoardToActive(newBoard), stepSuccess:false }     // reset board to active phase if not stepped on possible move cell
         }
 
-        const { _v, _h, val } = getSelectedCell(newBoard);
+        const { _v, _h, val } = getSelectedCell(newBoard);  // taking step
         newBoard.board[_v][_h] = null;
         val.state = null;
         newBoard.board[v][h] = val;
-        newBoard.phase = 'active';
-
-        return newBoard
+        return{ newBoard:resetBoardToActive(newBoard), stepSuccess:true }
     }
 
 }
