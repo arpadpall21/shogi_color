@@ -14,17 +14,18 @@ export function Board() {
     
     function pieceMove(ev) {
         ev.preventDefault();
-        
         const cellKey = ev.currentTarget.getAttribute('cellkey')
         
         
-        const newTable = calcStep(cellKey, boardState)
+        const newTable = calcStep(cellKey, currentActivePlayer, boardState)
         
         
         
         // store.dispatch(incrementMoves());
         updateBoardState(newTable)
     }
+
+    console.log( boardState )
 
     let rowIdx = -1;
     return (
@@ -44,25 +45,21 @@ export function Board() {
                                 let backgroundColor = undefined
 
                                 if (d.state) {
-                                    backgroundColor = d.state === 'selected' ? 'orange' : 'yellow';
+                                    switch (d.state) {
+                                        case 'selected':
+                                            backgroundColor = 'orange';
+                                            break;
+                                        case 'step':
+                                            backgroundColor = 'yellow';
+                                            break;
+                                        case 'kill':
+                                            backgroundColor = 'red';
+                                    }
                                 } else {
-                                    backgroundColor = d.p === 1 ? 'green' : 'red';
+                                    backgroundColor = d.p === 1 ? 'green' : 'blueViolet';
                                 }
 
-                                if (d.p === currentActivePlayer || d.state) {     // listener registered only on active player cells
-                                    return <td
-                                        key={cellId}
-                                        cellkey={cellId}
-                                        style={{backgroundColor}}
-                                        onClick={pieceMove}>
-                                    {d.piece} </td>
-                                }
-
-                                return <td 
-                                    key={cellId}
-                                    cellkey={cellId}
-                                    style={{backgroundColor}}>
-                                {d.piece} </td>
+                                return <td key={cellId} cellkey={cellId} style={{backgroundColor}} onClick={pieceMove}> {d.piece} </td>
                             }
 
                             return <td key={cellId} style={{visibility:'hidden'}}> 歩 </td>
