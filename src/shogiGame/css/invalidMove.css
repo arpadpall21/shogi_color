@@ -1,0 +1,13 @@
+.invalidMove {
+    position: absolute;
+    font-size: 50px;
+    background-color: red;
+    width: 100%;
+    top: 50%;
+    animation: hideSlow 1500ms ease-in 500ms forwards;
+}
+
+@keyframes hideSlow {
+    from {opacity:1}
+    to {opacity:0; visibility:'hidden';}
+}

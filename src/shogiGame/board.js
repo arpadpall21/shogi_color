@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import './css/board.css';
+import { InvalidMoveMessage } from './invalidMove';
 import { store, incrementMoves } from '../store';
 import { defaultBoardState, calcStep } from './helpers/gameLogic'
+
+let invalidMessage = undefined
 
 
 export function Board() {
@@ -10,10 +13,17 @@ export function Board() {
     const currentActivePlayer = store.getState().currentActivePlayer
     const tableSize = Number.parseInt((window.innerHeight < window.innerWidth ? window.innerHeight : window.innerWidth) / 100 * 75);
 
-    function pieceMove(ev) {
+    function pieceMoveHandler(ev) {
         ev.preventDefault();
-        const cellKey = ev.currentTarget.getAttribute('cellkey')
-        const { newBoard, stepSuccess } = calcStep(cellKey, currentActivePlayer, boardState)
+        
+        const cellKey = ev.currentTarget.getAttribute('cellkey');
+        const { newBoard, stepSuccess, moveOk } = calcStep(cellKey, currentActivePlayer, boardState);
+
+        if (!moveOk) {
+            invalidMessage = <InvalidMoveMessage />;
+        } else {
+            invalidMessage = undefined;
+        }
 
         if (stepSuccess) {
             store.dispatch(incrementMoves());
@@ -22,11 +32,10 @@ export function Board() {
         updateBoardState(newBoard)
     }
 
-    console.log( boardState )
-
     let rowIdx = -1;
     return (
-        <div className="boardContainer">
+        <div className="boardContainer" style={{position:'relative'}}>
+            {invalidMessage}
             <table className='shogiBoard' style={{width:tableSize, height:tableSize}}>
                 <tbody>
                 {boardState.board.map( r => {
@@ -56,10 +65,10 @@ export function Board() {
                                     backgroundColor = d.p === 1 ? 'green' : 'blueViolet';
                                 }
 
-                                return <td key={cellId} cellkey={cellId} style={{backgroundColor}} onClick={pieceMove}> {d.piece} </td>
+                                return <td key={cellId} cellkey={cellId} style={{backgroundColor}} onClick={pieceMoveHandler}> {d.piece} </td>
                             }
 
-                            return <td key={cellId} style={{visibility:'hidden'}}> 歩 </td>
+                            return <td key={cellId} cellkey={cellId} onClick={pieceMoveHandler}> <span style={{visibility:'hidden'}}>歩</span> </td>
                         })}
                     </tr>
                 })}
