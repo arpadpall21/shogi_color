@@ -18,7 +18,6 @@ export function Player(props) {
     })
     
     return (
-        <div className="player"> <span style={{backgroundColor, borderColor:playerColor}}
-        >Player {playerNr} </span> </div>
+        <div className="player"> <span style={{backgroundColor, borderColor:playerColor}}>Player {playerNr}</span> </div>
     )
 }
