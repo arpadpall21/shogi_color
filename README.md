@@ -1,5 +1,5 @@
 ## Installation 
-- run `npm install` 
+- run `npm install` in the current directory
 
 ### Start shogi 
 - to start type `npm start` in the current directory
