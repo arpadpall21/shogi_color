@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import './css/board.css';
 import { MessageBox } from './msgBox';
 import { store, incrementMoves } from '../store';
-import { defaultBoardState, calcStep } from './helpers/gameLogic'
+import { defaultBoardState, calcStep } from './helpers/gameLogic';
 
 
 export function Board() {
     console.log( '************************rerendered ')
     const [boardState, updateBoardState] = useState({board:defaultBoardState, phase:'active', msgStatus:{moveOk:true, winner:false}});
-    const currentActivePlayer = store.getState().currentActivePlayer
+    const currentActivePlayer = store.getState().currentActivePlayer;
     const tableSize = Number.parseInt(((window.innerHeight < window.innerWidth ? window.innerHeight : window.innerWidth) / 100 * 75), 10);
 
     function pieceMoveHandler(ev) {
@@ -21,10 +21,10 @@ export function Board() {
             store.dispatch(incrementMoves());
         }
 
-        updateBoardState(newBoardState)
+        updateBoardState(newBoardState);
     }
 
-    console.log( boardState.msgStatus )
+    console.log( boardState )
 
     let rowIdx = -1;
     return (
@@ -39,11 +39,19 @@ export function Board() {
                     return <tr key={rowIdx}>
                         {r.map( d => {
                             cellIdx++;
-                            const cellId = `${rowIdx}-${cellIdx}`
+                            const cellId = `${rowIdx}-${cellIdx}`;
 
                             if (d) {
-                                let backgroundColor = undefined
-
+                                let backgroundColor = undefined;
+                                let color = 'black';
+                                
+                                
+                                
+                                
+                                if (/[と全龍馬圭杏]/.test(d.piece)) {
+                                    color = 'red';
+                                }
+                                
                                 if (d.state) {
                                     switch (d.state) {
                                         case 'selected':
@@ -56,13 +64,13 @@ export function Board() {
                                             backgroundColor = 'red';
                                             break;
                                         default:
-                                            backgroundColor = undefined;
+                                            backgroundColor = '#d69f74';
                                     }
                                 } else {
                                     backgroundColor = d.p === 1 ? 'green' : 'blueViolet';
                                 }
 
-                                return <td key={cellId} cellkey={cellId} style={{backgroundColor}} onClick={pieceMoveHandler}> {d.piece} </td>
+                                return <td key={cellId} cellkey={cellId} style={{backgroundColor, color}} onClick={pieceMoveHandler}> {d.piece} </td>
                             }
 
                             return <td key={cellId} cellkey={cellId} onClick={pieceMoveHandler}> <span style={{visibility:'hidden'}}>歩</span> </td>

@@ -7,14 +7,24 @@
     香 = lance
     飛 = rock
     角 = bishop
+    
+    と = promoted pawn
+    全 = promoted silver general
+    龍 = promoted rock
+    馬 = promoted bishop
+    圭 = promoted knight
+    杏 = promoted lance
 */
 
 
 export const defaultBoardState = [
-    [{p:2, piece:'香', state:null}, {p:2, piece:'桂', state:null}, {p:2, piece:'銀', state:null}, {p:2, piece:'金', state:null}, {p:2, piece:'王', state:null}, {p:2, piece:'金', state:null}, {p:2, piece:'銀', state:null}, {p:2, piece:'桂', state:null}, {p:2, piece:'香', state:null}],
-    [null, {p:2, piece:'飛', state:null}, null, null, null, null, null, {p:2, piece:'角', state:null}, null],
-    [{p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}],
+    // [{p:2, piece:'香', state:null}, {p:2, piece:'桂', state:null}, {p:2, piece:'銀', state:null}, {p:2, piece:'金', state:null}, {p:2, piece:'王', state:null}, {p:2, piece:'金', state:null}, {p:2, piece:'銀', state:null}, {p:2, piece:'桂', state:null}, {p:2, piece:'香', state:null}],
+    // [null, {p:2, piece:'飛', state:null}, null, null, null, null, null, {p:2, piece:'角', state:null}, null],
+    // [{p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}],
+    [null, null, {p:2, piece:'歩', state:null}, null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, {p:1, piece:'歩', state:null}, null, null, null],
     [null, null, null, null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null, null],
     [{p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}],
@@ -33,10 +43,12 @@ export function calcStep(cellKey, currentActivePlayer, boardState){
             return  { newBoardState:boardState, stepSuccess:false }   // original board retunred -> component won't be rerendered
         }
 
-        const possibleMoves =  calcPossibleMoves(v, h, newBoardState.board);
+        const { possibleMoves } =  calcPossibleMoves(v, h, newBoardState.board);
+
+        console.log( possibleMoves )
 
         for(let i of possibleMoves){
-            const cellToStep = newBoardState.board[v+i[0]] && newBoardState.board[v+i[0]][h+i[1]]
+            const cellToStep = newBoardState.board[v+i[0]] && newBoardState.board[v+i[0]][h+i[1]];
 
             if (cellToStep === undefined) {   // ignoring off table moves
                 continue;
@@ -53,9 +65,9 @@ export function calcStep(cellKey, currentActivePlayer, boardState){
         }
         newBoardState.board[v][h].state = 'selected';
         newBoardState.phase = 'moving';
-        newBoardState.msgStatus = { moveOk:true, winner:false }
+        newBoardState.msgStatus = { moveOk:true, winner:false };
 
-        return { newBoardState, stepSuccess:false }
+        return { newBoardState, stepSuccess:false };
     }
 
     if (boardState.phase === 'moving') {   // moving phase logic
@@ -74,37 +86,42 @@ export function calcStep(cellKey, currentActivePlayer, boardState){
         newBoardState.board[v][h] = selected.val;
 
         updateWinner(newBoardState)         // update winner after the step
-        return { newBoardState:resetBoardToActive(newBoardState), stepSuccess:true }
+        return { newBoardState:resetBoardToActive(newBoardState), stepSuccess:true };
     }
 }
 
 function calcPossibleMoves(v, h, board){
-    const player = board[v][h].p
+    const player = board[v][h].p;
+    const piece = board[v][h].piece;
 
-    switch (board[v][h].piece) {
-        case '歩':
-            return pawnMoves(player);
-        case '銀':
-            return silverGeneralMoves(player);
+    switch (piece) {
+        case '歩': case 'と':
+            return { possibleMoves:pawnMoves(player, piece) };
+        case '銀': case '全':
+            return { possibleMoves:silverGeneralMoves(player, piece) };
+        case '飛': case '龍':
+            return { possibleMoves:rockMoves(player, piece, board, h, v) };
+        case '角': case '馬':
+            return { possibleMoves:bishopMoves(player, piece, board, h, v) };
+        case '桂': case '圭':
+            return { possibleMoves:knightMoves(player, piece) };
+        case '香': case '杏':
+            return { possibleMoves:lanceMoves(player, piece, board, h, v) };
         case '金':
-            return goldGeneralMoves(player);
-        case '桂':
-            return knightMoves(player);
-        case '香':
-            return lanceMoves(player, board, h, v);
-        case '飛':
-            return rockMoves(player, board, h, v);
-        case '角':
-            return bishopMoves(player, board, h, v);
+            return { possibleMoves:goldGeneralMoves(player) };
         case '王':
-            return kingMoves();
+            return { possibleMoves:kingMoves() };
         default:
             return null
     }
 }
 
-function pawnMoves(player) {
+function pawnMoves(player, piece) {
     const moves = [[-1, 0]];
+
+    if (piece === 'と') {
+        moves.push([-1, 1], [0, 1], [1, 0], [0, -1], [-1, -1]);
+    }
     if (player === 1) {
         return moves;
     }
@@ -112,8 +129,13 @@ function pawnMoves(player) {
     return inverseMoves(moves);
 }
 
-function silverGeneralMoves(player) {
-    const moves = [[-1, -1], [-1, 0], [-1, 1], [1, -1], [1, 1]];
+function silverGeneralMoves(player, piece) {
+    let moves = [[-1, -1], [-1, 0], [-1, 1], [1, -1], [1, 1]];
+
+    if (piece === '全') {
+        moves = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0]];
+    }
+
     if (player === 1) {
         return moves;
     }
@@ -130,8 +152,13 @@ function goldGeneralMoves(player) {
     return inverseMoves(moves);
 }
 
-function knightMoves(player) {
-    const moves = [[-2, -1], [-2, 1]];
+function knightMoves(player, piece) {
+    let moves = [[-2, -1], [-2, 1]];
+
+    if (piece === '圭') {
+        moves = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0]];
+    }
+
     if (player === 1) {
         return moves;
     }
@@ -139,10 +166,19 @@ function knightMoves(player) {
     return inverseMoves(moves);
 }
 
-function lanceMoves(player, board, h, v) {
-    const moves = [
+function lanceMoves(player, piece, board, h, v) {
+    let moves = [
         [[-1, 0], [-2, 0], [-3, 0], [-4, 0], [-5, 0], [-6, 0], [-7, 0], [-8, -8]]
     ];
+
+    if (piece === '杏') {
+        moves = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0]];
+
+        if (player === 1) {
+            return moves;
+        }
+        return inverseMoves(moves);
+    }
 
     if (player === 1) {
         return calcPossibleContinousMoves(v, h, moves, board);
@@ -151,7 +187,7 @@ function lanceMoves(player, board, h, v) {
     return calcPossibleContinousMoves(v, h, [inverseMoves(moves[0])], board);
 }
 
-function rockMoves(player, board, h, v) {
+function rockMoves(player, piece, board, h, v) {
     const moves = [
         [[-1, 0], [-2, 0], [-3, 0], [-4, 0], [-5, 0], [-6, 0], [-7, 0], [-8, 0]],
         [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0], [8, 0]],
@@ -160,16 +196,24 @@ function rockMoves(player, board, h, v) {
         
     ];
 
+    if (piece === '龍') {
+        moves.push([[-1, -1], [-1, 1], [1, 1], [1, -1]])
+    }
+
     return calcPossibleContinousMoves(v, h, moves, board);
 }
 
-function bishopMoves(player, board, h, v) {
+function bishopMoves(player, piece, board, h, v) {
     const moves = [
         [[-1, -1], [-2, -2], [-3, -3], [-4, -4], [-5, -5], [-6, -6], [-7, -7], [-8, -8]],
         [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7], [8, 8]],
         [[-1, 1], [-2, 2], [-3, 3], [-4, 4], [-5, 5], [-6, 6], [-7, 7], [-8, 8]],
         [[1, -1], [2, -2], [3, -3], [4, -4], [5, -5], [6, -6], [7, -7], [8, -8]]
     ];
+
+    if (piece === '馬') {
+        moves.push([[-1, 0], [0, 1], [1, 0], [0, -1]])
+    }
 
     return calcPossibleContinousMoves(v, h, moves, board);
 }
