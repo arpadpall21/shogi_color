@@ -15,62 +15,66 @@ export const defaultBoardState = [
     [null, {p:2, piece:'飛', state:null}, null, null, null, null, null, {p:2, piece:'角', state:null}, null],
     [{p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}],
     [null, null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null, {p:1, piece:'角', state:null}],
+    [null, null, null, null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null, null],
     [{p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}],
     [null, {p:1, piece:'角', state:null}, null, null, null, null, null, {p:1, piece:'飛', state:null}, null],
     [{p:1, piece:'香', state:null}, {p:1, piece:'桂', state:null}, {p:1, piece:'銀', state:null}, {p:1, piece:'金', state:null}, {p:1, piece:'王', state:null}, {p:1, piece:'金', state:null}, {p:1, piece:'銀', state:null}, {p:1, piece:'桂', state:null}, {p:1, piece:'香', state:null}]
 ];
 
-export function calcStep(cellKey, currentActivePlayer, board){
+export function calcStep(cellKey, currentActivePlayer, boardState){
     const v = Number(cellKey[0])    // coordinate order implementation -> vertical horizontal
     const h = Number(cellKey[2])
 
-    const newBoard = Object.assign({}, board)   // new object required in order to change the component state
+    const newBoardState = Object.assign({}, boardState)   // new object required in order to change the component state
 
-    if (board.phase === 'active') {   // active phase logic
-        if (board.board[v][h] === null || board.board[v][h].p !== currentActivePlayer) {
-            return  { newBoard:board, stepSuccess:false, moveOk:true }   // original board retunred -> component won't be rerendered
+    if (boardState.phase === 'active') {   // active phase logic
+        if (boardState.board[v][h] === null || boardState.board[v][h].p !== currentActivePlayer) {
+            return  { newBoardState:boardState, stepSuccess:false }   // original board retunred -> component won't be rerendered
         }
 
-        const possibleMoves =  calcPossibleMoves(v, h, newBoard.board);
+        const possibleMoves =  calcPossibleMoves(v, h, newBoardState.board);
 
         for(let i of possibleMoves){
-            const cellToStep = newBoard.board[v+i[0]] && newBoard.board[v+i[0]][h+i[1]]
+            const cellToStep = newBoardState.board[v+i[0]] && newBoardState.board[v+i[0]][h+i[1]]
 
             if (cellToStep === undefined) {   // ignoring off table moves
                 continue;
             }
 
             if (cellToStep === null) {
-                newBoard.board[v+i[0]][h+i[1]] = {state:'step'};
+                newBoardState.board[v+i[0]][h+i[1]] = {state:'step'};
                 continue;
             }
 
-            if (cellToStep.p !== newBoard.board[v][h].p) {
-                newBoard.board[v+i[0]][h+i[1]].state = 'kill';
+            if (cellToStep.p !== newBoardState.board[v][h].p) {
+                newBoardState.board[v+i[0]][h+i[1]].state = 'kill';
             }
         }
-        newBoard.board[v][h].state = 'selected';
-        newBoard.phase = 'moving';
+        newBoardState.board[v][h].state = 'selected';
+        newBoardState.phase = 'moving';
+        newBoardState.msgStatus = { moveOk:true, winner:false }
 
-        return { newBoard, stepSuccess:false, moveOk:true }
+        return { newBoardState, stepSuccess:false }
     }
 
-    if (board.phase === 'moving') {   // moving phase logic
-        if (newBoard.board[v][h] !== null && newBoard.board[v][h].state === 'selected') {   // clicking on selected piece is an ok move
-            return { newBoard:resetBoardToActive(newBoard), stepSuccess:false, moveOk:true }
+    if (boardState.phase === 'moving') {   // moving phase logic
+        if (newBoardState.board[v][h] !== null && newBoardState.board[v][h].state === 'selected') {   // clicking on selected piece is an ok move
+            return { newBoardState:resetBoardToActive(newBoardState), stepSuccess:false }
         }
 
-        if (newBoard.board[v][h] === null || !['step', 'kill'].includes(newBoard.board[v][h].state)) {
-            return { newBoard:resetBoardToActive(newBoard), stepSuccess:false, moveOk:false }     // reset board to active phase if not stepped on possible move cell
+        if (newBoardState.board[v][h] === null || !['step', 'kill'].includes(newBoardState.board[v][h].state)) {    // not an ok move
+            newBoardState.msgStatus.moveOk = false;
+            return { newBoardState:resetBoardToActive(newBoardState), stepSuccess:false }     // reset board to active phase if not stepped on possible move cell
         }
 
-        const { _v, _h, val } = getSelectedCell(newBoard);  // taking step
-        newBoard.board[_v][_h] = null;
-        val.state = null;
-        newBoard.board[v][h] = val;
-        return{ newBoard:resetBoardToActive(newBoard), stepSuccess:true, moveOk:true }
+        const { selected } = getSelectedCell(newBoardState);  // making the step
+        newBoardState.board[selected.v][selected.h] = null;
+        selected.val.state = null;
+        newBoardState.board[v][h] = selected.val;
+
+        updateWinner(newBoardState)         // update winner after the step
+        return { newBoardState:resetBoardToActive(newBoardState), stepSuccess:true }
     }
 }
 
@@ -94,6 +98,8 @@ function calcPossibleMoves(v, h, board){
             return bishopMoves(player, board, h, v);
         case '王':
             return kingMoves();
+        default:
+            return null
     }
 }
 
@@ -192,14 +198,14 @@ function calcPossibleContinousMoves(v, h, moves, board) {
         for(let k of i) {
             possibleContinousMoves.push([k[0], k[1]])
             if (board[v+k[0]] === undefined || board[v+k[0]][h+k[1]] === undefined ||
-                board[v+k[0]][h+k[1]] !== null && board[v+k[0]][h+k[1]] !== undefined && 
-                board[v+k[0]][h+k[1]].state === null) {
+                (board[v+k[0]][h+k[1]] !== null && board[v+k[0]][h+k[1]] !== undefined && 
+                board[v+k[0]][h+k[1]].state === null)) {
                 break;
             }
         }
     }
 
-    return  possibleContinousMoves
+    return  possibleContinousMoves;
 }
 
 function resetBoardToActive(board) {
@@ -218,18 +224,47 @@ function resetBoardToActive(board) {
         }
     }
 
-    return board
+    return board;
 }
 
 function getSelectedCell(board) {
+
     for (let i = 0; i < board.board.length; i++) {
         for (let k = 0; k < board.board[i].length; k++) {
             if (board.board[i][k] === null) {
                 continue;
             }
+
             if (board.board[i][k].state === 'selected') {
-                return { _v:i, _h:k, val:board.board[i][k]}
+                return { selected:{v:i, h:k, val:board.board[i][k]} };
             }
         }
+    }
+}
+
+function updateWinner(boardStatus) {
+    let p1Pieces = 0;
+    let p2Pieces = 0;
+
+    for(const i of boardStatus.board) {
+        for(const cell of i) {
+            if (cell === null) {
+                continue;
+            }
+
+            if (cell.p === 1) {
+                p1Pieces++;
+            } else if (cell.p === 2) {
+                p2Pieces++;
+            }
+        }
+    }
+
+    if (p1Pieces <= 0) {
+        boardStatus.msgStatus.winner = 2;
+    } else if (p2Pieces <= 0) {
+        boardStatus.msgStatus.winner = 1;
+    } else {
+        boardStatus.msgStatus.winner = false;
     }
 }

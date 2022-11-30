@@ -1,41 +1,35 @@
 import React, { useState } from 'react';
 import './css/board.css';
-import { InvalidMoveMessage } from './invalidMove';
+import { MessageBox } from './msgBox';
 import { store, incrementMoves } from '../store';
 import { defaultBoardState, calcStep } from './helpers/gameLogic'
-
-let invalidMessage = undefined
 
 
 export function Board() {
     console.log( '************************rerendered ')
-    const [boardState, updateBoardState] = useState({board:defaultBoardState, phase:'active'});
+    const [boardState, updateBoardState] = useState({board:defaultBoardState, phase:'active', msgStatus:{moveOk:true, winner:false}});
     const currentActivePlayer = store.getState().currentActivePlayer
-    const tableSize = Number.parseInt((window.innerHeight < window.innerWidth ? window.innerHeight : window.innerWidth) / 100 * 75);
+    const tableSize = Number.parseInt(((window.innerHeight < window.innerWidth ? window.innerHeight : window.innerWidth) / 100 * 75), 10);
 
     function pieceMoveHandler(ev) {
         ev.preventDefault();
         
         const cellKey = ev.currentTarget.getAttribute('cellkey');
-        const { newBoard, stepSuccess, moveOk } = calcStep(cellKey, currentActivePlayer, boardState);
-
-        if (!moveOk) {
-            invalidMessage = <InvalidMoveMessage />;
-        } else {
-            invalidMessage = undefined;
-        }
+        const { newBoardState, stepSuccess } = calcStep(cellKey, currentActivePlayer, boardState);
 
         if (stepSuccess) {
             store.dispatch(incrementMoves());
         }
 
-        updateBoardState(newBoard)
+        updateBoardState(newBoardState)
     }
+
+    console.log( boardState.msgStatus )
 
     let rowIdx = -1;
     return (
         <div className="boardContainer" style={{position:'relative'}}>
-            {invalidMessage}
+            {<MessageBox msgStatus={boardState.msgStatus} />}
             <table className='shogiBoard' style={{width:tableSize, height:tableSize}}>
                 <tbody>
                 {boardState.board.map( r => {
@@ -60,6 +54,9 @@ export function Board() {
                                             break;
                                         case 'kill':
                                             backgroundColor = 'red';
+                                            break;
+                                        default:
+                                            backgroundColor = undefined;
                                     }
                                 } else {
                                     backgroundColor = d.p === 1 ? 'green' : 'blueViolet';

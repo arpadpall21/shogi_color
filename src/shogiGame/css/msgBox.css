@@ -1,10 +1,9 @@
-.invalidMove {
+.msgBox {
     position: absolute;
     font-size: 50px;
-    background-color: red;
     width: 100%;
     top: 50%;
-    animation: hideSlow 1500ms ease-in 500ms forwards;
+    animation: 1000ms ease-in 500ms forwards;
 }
 
 @keyframes hideSlow {
