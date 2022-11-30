@@ -1,12 +1,12 @@
 /*
     歩 = pawn
     銀 = silver general
-    金 = gold general
-    桂 = kinght
-    王 = king
-    香 = lance
     飛 = rock
     角 = bishop
+    桂 = kinght
+    香 = lance
+    金 = gold general
+    王 = king
     
     と = promoted pawn
     全 = promoted silver general
@@ -16,15 +16,13 @@
     杏 = promoted lance
 */
 
+const pieceUpgradeMap = { 歩:'と', 銀:'全', 飛:'龍', 角:'馬', 桂:'圭', 香:'杏' };
 
 export const defaultBoardState = [
-    // [{p:2, piece:'香', state:null}, {p:2, piece:'桂', state:null}, {p:2, piece:'銀', state:null}, {p:2, piece:'金', state:null}, {p:2, piece:'王', state:null}, {p:2, piece:'金', state:null}, {p:2, piece:'銀', state:null}, {p:2, piece:'桂', state:null}, {p:2, piece:'香', state:null}],
-    // [null, {p:2, piece:'飛', state:null}, null, null, null, null, null, {p:2, piece:'角', state:null}, null],
-    // [{p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}],
-    [null, null, {p:2, piece:'歩', state:null}, null, null, null, null, null, null],
+    [{p:2, piece:'香', state:null}, {p:2, piece:'桂', state:null}, {p:2, piece:'銀', state:null}, {p:2, piece:'金', state:null}, {p:2, piece:'王', state:null}, {p:2, piece:'金', state:null}, {p:2, piece:'銀', state:null}, {p:2, piece:'桂', state:null}, {p:2, piece:'香', state:null}],
+    [null, {p:2, piece:'飛', state:null}, null, null, null, null, null, {p:2, piece:'角', state:null}, null],
+    [{p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}, {p:2, piece:'歩', state:null}],
     [null, null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, null, null, null, null],
-    [null, null, null, null, null, {p:1, piece:'歩', state:null}, null, null, null],
     [null, null, null, null, null, null, null, null, null],
     [null, null, null, null, null, null, null, null, null],
     [{p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}, {p:1, piece:'歩', state:null}],
@@ -36,16 +34,14 @@ export function calcStep(cellKey, currentActivePlayer, boardState){
     const v = Number(cellKey[0])    // coordinate order implementation -> vertical horizontal
     const h = Number(cellKey[2])
 
-    const newBoardState = Object.assign({}, boardState)   // new object required in order to change the component state
+    const newBoardState = Object.assign({}, boardState);   // new object required in order to change the component state
 
     if (boardState.phase === 'active') {   // active phase logic
         if (boardState.board[v][h] === null || boardState.board[v][h].p !== currentActivePlayer) {
             return  { newBoardState:boardState, stepSuccess:false }   // original board retunred -> component won't be rerendered
         }
 
-        const { possibleMoves } =  calcPossibleMoves(v, h, newBoardState.board);
-
-        console.log( possibleMoves )
+        const possibleMoves = calcPossibleMoves(v, h, newBoardState.board);
 
         for(let i of possibleMoves){
             const cellToStep = newBoardState.board[v+i[0]] && newBoardState.board[v+i[0]][h+i[1]];
@@ -63,6 +59,7 @@ export function calcStep(cellKey, currentActivePlayer, boardState){
                 newBoardState.board[v+i[0]][h+i[1]].state = 'kill';
             }
         }
+
         newBoardState.board[v][h].state = 'selected';
         newBoardState.phase = 'moving';
         newBoardState.msgStatus = { moveOk:true, winner:false };
@@ -72,18 +69,23 @@ export function calcStep(cellKey, currentActivePlayer, boardState){
 
     if (boardState.phase === 'moving') {   // moving phase logic
         if (newBoardState.board[v][h] !== null && newBoardState.board[v][h].state === 'selected') {   // clicking on selected piece is an ok move
-            return { newBoardState:resetBoardToActive(newBoardState), stepSuccess:false }
+            return { newBoardState:resetBoardToActive(newBoardState), stepSuccess:false };
         }
 
         if (newBoardState.board[v][h] === null || !['step', 'kill'].includes(newBoardState.board[v][h].state)) {    // not an ok move
             newBoardState.msgStatus.moveOk = false;
-            return { newBoardState:resetBoardToActive(newBoardState), stepSuccess:false }     // reset board to active phase if not stepped on possible move cell
+            return { newBoardState:resetBoardToActive(newBoardState), stepSuccess:false };     // reset board to active phase if not stepped on possible move cell
         }
 
         const { selected } = getSelectedCell(newBoardState);  // making the step
         newBoardState.board[selected.v][selected.h] = null;
         selected.val.state = null;
         newBoardState.board[v][h] = selected.val;
+        const upgradePiece = pieceShouldUpgrade(newBoardState, v, h);    // upgrade if possible after the step
+
+        if (upgradePiece) {
+            newBoardState.board[v][h].piece = upgradePiece;
+        }
 
         updateWinner(newBoardState)         // update winner after the step
         return { newBoardState:resetBoardToActive(newBoardState), stepSuccess:true };
@@ -96,99 +98,97 @@ function calcPossibleMoves(v, h, board){
 
     switch (piece) {
         case '歩': case 'と':
-            return { possibleMoves:pawnMoves(player, piece) };
+            return pawnMoves(player, piece, board, v, h);
         case '銀': case '全':
-            return { possibleMoves:silverGeneralMoves(player, piece) };
+            return silverGeneralMoves(player, piece, board, v, h);
         case '飛': case '龍':
-            return { possibleMoves:rockMoves(player, piece, board, h, v) };
+            return rockMoves(player, piece, board, v, h);
         case '角': case '馬':
-            return { possibleMoves:bishopMoves(player, piece, board, h, v) };
+            return bishopMoves(player, piece, board, v, h);
         case '桂': case '圭':
-            return { possibleMoves:knightMoves(player, piece) };
+            return knightMoves(player, piece, board, v, h);
         case '香': case '杏':
-            return { possibleMoves:lanceMoves(player, piece, board, h, v) };
+            return lanceMoves(player, piece, board, v, h);
         case '金':
-            return { possibleMoves:goldGeneralMoves(player) };
+            return goldGeneralMoves(player);
         case '王':
-            return { possibleMoves:kingMoves() };
+            return kingMoves();
         default:
-            return null
+            return null;
     }
 }
 
-function pawnMoves(player, piece) {
-    const moves = [[-1, 0]];
+function pawnMoves(player, piece, board, v, h) {
+    const possibleMoves = [[-1, 0]];
 
     if (piece === 'と') {
-        moves.push([-1, 1], [0, 1], [1, 0], [0, -1], [-1, -1]);
+        possibleMoves.push([-1, 1], [0, 1], [1, 0], [0, -1], [-1, -1]);
     }
     if (player === 1) {
-        return moves;
+        return possibleMoves;
     }
 
-    return inverseMoves(moves);
+    return inverseMoves(possibleMoves);
 }
 
 function silverGeneralMoves(player, piece) {
-    let moves = [[-1, -1], [-1, 0], [-1, 1], [1, -1], [1, 1]];
+    let possibleMoves = [[-1, -1], [-1, 0], [-1, 1], [1, -1], [1, 1]];
 
     if (piece === '全') {
-        moves = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0]];
+        possibleMoves = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0]];
     }
-
     if (player === 1) {
-        return moves;
+        return possibleMoves;
     }
 
-    return inverseMoves(moves);
+    return inverseMoves(possibleMoves);
 }
 
 function goldGeneralMoves(player) {
-    const moves = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0]];
+    const possibleMoves = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0]];
+
     if (player === 1) {
-        return moves;
+        return possibleMoves;
     }
 
-    return inverseMoves(moves);
+    return inverseMoves(possibleMoves);
 }
 
 function knightMoves(player, piece) {
-    let moves = [[-2, -1], [-2, 1]];
+    let possibleMoves = [[-2, -1], [-2, 1]];
 
     if (piece === '圭') {
-        moves = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0]];
+        possibleMoves = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0]];
     }
-
     if (player === 1) {
-        return moves;
+        return possibleMoves;
     }
 
-    return inverseMoves(moves);
+    return inverseMoves(possibleMoves);
 }
 
-function lanceMoves(player, piece, board, h, v) {
-    let moves = [
+function lanceMoves(player, piece, board, v, h) {
+    let possibleMoves = [
         [[-1, 0], [-2, 0], [-3, 0], [-4, 0], [-5, 0], [-6, 0], [-7, 0], [-8, -8]]
     ];
 
     if (piece === '杏') {
-        moves = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0]];
-
+        possibleMoves = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0]];
         if (player === 1) {
-            return moves;
+            return  possibleMoves;
         }
-        return inverseMoves(moves);
-    }
 
+    return inverseMoves(possibleMoves);
+    }
     if (player === 1) {
-        return calcPossibleContinousMoves(v, h, moves, board);
+        return calcPossibleContinousMoves(v, h, possibleMoves, board);
     }
 
-    return calcPossibleContinousMoves(v, h, [inverseMoves(moves[0])], board);
+    return calcPossibleContinousMoves(v, h,[inverseMoves(possibleMoves[0])], board);
 }
 
-function rockMoves(player, piece, board, h, v) {
-    const moves = [
+function rockMoves(player, piece, board, v, h) {
+    const possibleMoves = [
         [[-1, 0], [-2, 0], [-3, 0], [-4, 0], [-5, 0], [-6, 0], [-7, 0], [-8, 0]],
         [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0], [8, 0]],
         [[0, -1], [0, -2], [0, -3], [0, -4], [0, -5], [0, -6], [0, -7], [0, -8]],
@@ -197,14 +197,14 @@ function rockMoves(player, piece, board, h, v) {
     ];
 
     if (piece === '龍') {
-        moves.push([[-1, -1], [-1, 1], [1, 1], [1, -1]])
+        possibleMoves.push([[-1, -1], [-1, 1], [1, 1], [1, -1]])
     }
 
-    return calcPossibleContinousMoves(v, h, moves, board);
+    return calcPossibleContinousMoves(v, h, possibleMoves, board);
 }
 
-function bishopMoves(player, piece, board, h, v) {
-    const moves = [
+function bishopMoves(player, piece, board, v, h) {
+    const possibleMoves = [
         [[-1, -1], [-2, -2], [-3, -3], [-4, -4], [-5, -5], [-6, -6], [-7, -7], [-8, -8]],
         [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7], [8, 8]],
         [[-1, 1], [-2, 2], [-3, 3], [-4, 4], [-5, 5], [-6, 6], [-7, 7], [-8, 8]],
@@ -212,16 +212,15 @@ function bishopMoves(player, piece, board, h, v) {
     ];
 
     if (piece === '馬') {
-        moves.push([[-1, 0], [0, 1], [1, 0], [0, -1]])
+        possibleMoves.push([[-1, 0], [0, 1], [1, 0], [0, -1]])
     }
 
-    return calcPossibleContinousMoves(v, h, moves, board);
+    return calcPossibleContinousMoves(v, h, possibleMoves, board);
 }
 
 function kingMoves(){
     return [[-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1]];
 }
-
 
 function inverseMoves(moves) {   // inverses possible moves for player 2
     for (const element of moves) {
@@ -237,7 +236,8 @@ function inverseMoves(moves) {   // inverses possible moves for player 2
 }
 
 function calcPossibleContinousMoves(v, h, moves, board) {
-    const possibleContinousMoves = []
+    const possibleContinousMoves = [];
+
     for (let i of moves) {
         for(let k of i) {
             possibleContinousMoves.push([k[0], k[1]])
@@ -249,7 +249,7 @@ function calcPossibleContinousMoves(v, h, moves, board) {
         }
     }
 
-    return  possibleContinousMoves;
+    return possibleContinousMoves;
 }
 
 function resetBoardToActive(board) {
@@ -272,7 +272,6 @@ function resetBoardToActive(board) {
 }
 
 function getSelectedCell(board) {
-
     for (let i = 0; i < board.board.length; i++) {
         for (let k = 0; k < board.board[i].length; k++) {
             if (board.board[i][k] === null) {
@@ -295,7 +294,6 @@ function updateWinner(boardStatus) {
             if (cell === null) {
                 continue;
             }
-
             if (cell.p === 1) {
                 p1Pieces++;
             } else if (cell.p === 2) {
@@ -311,4 +309,21 @@ function updateWinner(boardStatus) {
     } else {
         boardStatus.msgStatus.winner = false;
     }
+}
+
+function pieceShouldUpgrade(board, v, h) {
+    const player = board.board[v][h].p;
+    const piece = board.board[v][h].piece;
+
+    if (!(piece in pieceUpgradeMap)) {
+        return false;
+    }
+    if (player === 1 && v < 3) {
+        return pieceUpgradeMap[piece];
+    }
+    if (player === 2 && v > 5) {
+        return pieceUpgradeMap[piece];
+    }
+
+    return false
 }

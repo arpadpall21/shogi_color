@@ -6,14 +6,13 @@ import { defaultBoardState, calcStep } from './helpers/gameLogic';
 
 
 export function Board() {
-    console.log( '************************rerendered ')
     const [boardState, updateBoardState] = useState({board:defaultBoardState, phase:'active', msgStatus:{moveOk:true, winner:false}});
     const currentActivePlayer = store.getState().currentActivePlayer;
     const tableSize = Number.parseInt(((window.innerHeight < window.innerWidth ? window.innerHeight : window.innerWidth) / 100 * 75), 10);
 
     function pieceMoveHandler(ev) {
         ev.preventDefault();
-        
+
         const cellKey = ev.currentTarget.getAttribute('cellkey');
         const { newBoardState, stepSuccess } = calcStep(cellKey, currentActivePlayer, boardState);
 
@@ -23,8 +22,6 @@ export function Board() {
 
         updateBoardState(newBoardState);
     }
-
-    console.log( boardState )
 
     let rowIdx = -1;
     return (
@@ -44,10 +41,7 @@ export function Board() {
                             if (d) {
                                 let backgroundColor = undefined;
                                 let color = 'black';
-                                
-                                
-                                
-                                
+
                                 if (/[と全龍馬圭杏]/.test(d.piece)) {
                                     color = 'red';
                                 }
@@ -61,7 +55,7 @@ export function Board() {
                                             backgroundColor = 'yellow';
                                             break;
                                         case 'kill':
-                                            backgroundColor = 'red';
+                                            backgroundColor = 'orangeRed';
                                             break;
                                         default:
                                             backgroundColor = '#d69f74';
